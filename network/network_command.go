@@ -3,6 +3,7 @@ package network
 import (
 	"fmt"
 	"my-docker/container"
+	"my-docker/network"
 	"net"
 	"os"
 	"os/exec"
@@ -67,6 +68,7 @@ func Disconnect(networkName string, cinfo *container.ContainerInfo) error {
 	if networkName == "" {
 		return nil
 	}
+	network.Init()
 	nw, ok := networks[networkName]
 	if !ok {
 		return fmt.Errorf("No Such Network: %s", networkName)
