@@ -156,13 +156,8 @@ func (d *BridgeNetworkDriver) Delete(network Network) error {
 }
 
 func (d *BridgeNetworkDriver) Disconnect(network Network, endpoint *Endpoint) error {
-	vethName := fmt.Sprintf("vethp-%s", endpoint.ID[:5])
-	link, err := netlink.LinkByName(vethName)
-	if err != nil {
-		log.Errorf("BridgeNetworkDriver Disconnect LinkByName error: %v", err)
-		return err
-	}
-	return netlink.LinkDel(link)
+	// 容器退出，容器侧的 vethp 消失，另一侧的 veth 也一并消失
+	return nil
 }
 
 func (d *BridgeNetworkDriver) DevName(name string) string {

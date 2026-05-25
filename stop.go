@@ -70,9 +70,9 @@ func removeContainer(containerName string) {
 
 	// 3. 清理工作
 	log.Infof("clean work space")
+	network.Disconnect(containerInfo.NetworkName, containerInfo)
 	container.DeleteWorkSpace(containerName, containerInfo.Volume)
 	deleteContainerInfo(containerName)
-	network.Disconnect(containerInfo.NetworkName, containerInfo)
 
 	log.Infof("container %s removed successfully", containerName)
 }

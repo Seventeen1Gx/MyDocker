@@ -81,9 +81,9 @@ func Run(tty bool, comArray []string, res *subsystem.ResourceConfig, imageName, 
 
 		// 清理工作
 		log.Infof("clean work space")
+		network.Disconnect(nw, containerInfo)
 		container.DeleteWorkSpace(containerName, volume)
 		deleteContainerInfo(containerName)
-		network.Disconnect(nw, containerInfo)
 	}
 
 	// 后台模式不等待子进程结束，直接返回
