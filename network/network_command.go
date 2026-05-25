@@ -227,6 +227,16 @@ func configPortMapping(ep *Endpoint) error {
 			log.Errorf("iptables Output, %v", output)
 			continue
 		}
+
+		// PREROUTING 针对宿主机外部访问容器的流量
+		// OUTPUT 针对宿主机本地访问容器的流量
+		iptablesCmd = fmt.Sprintf("-t nat -A OUTPUT -p tcp -m tcp --dport %s -j DNAT --to-destination %s:%s",
+			portMapping[0], ep.IPAddress.String(), portMapping[1])
+		output, err = cmd.Output()
+		if err != nil {
+			log.Errorf("iptables Output, %v", output)
+			continue
+		}
 	}
 	return nil
 }
@@ -246,6 +256,14 @@ func cleanPortMapping(ep *Endpoint) error {
 		)
 
 		cmd := exec.Command("iptables", strings.Split(iptablesCmd, " ")...)
+		_ = cmd.Run() // 忽略错误，不存在也没关系
+
+		iptablesCmd = fmt.Sprintf(
+			"-t nat -D OUTPUT -p tcp -m tcp --dport %s -j DNAT --to-destination %s:%s",
+			portMapping[0], ep.IPAddress.String(), portMapping[1],
+		)
+
+		cmd = exec.Command("iptables", strings.Split(iptablesCmd, " ")...)
 		_ = cmd.Run() // 忽略错误，不存在也没关系
 	}
 	return nil
