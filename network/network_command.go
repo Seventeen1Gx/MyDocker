@@ -241,7 +241,7 @@ func cleanPortMapping(ep *Endpoint) error {
 
 		// 注意：这里是 -D DELETE，不是 -A ADD
 		iptablesCmd := fmt.Sprintf(
-			"-t nat -D PREROUTING -p tcp --dport %s -j DNAT --to-destination %s:%s",
+			"-t nat -D PREROUTING -p tcp -m tcp --dport %s -j DNAT --to-destination %s:%s",
 			portMapping[0], ep.IPAddress.String(), portMapping[1],
 		)
 
