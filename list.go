@@ -35,7 +35,7 @@ func ListContainers() {
 	// 使用 tabwriter 格式化输出表格
 	w := tabwriter.NewWriter(os.Stdout, 12, 1, 3, ' ', 0)
 	// 打印表头
-	fmt.Fprintf(w, "ID\tNAME\tPID\tSTATUS\tCOMMAND\tCREATED\n")
+	fmt.Fprintf(w, "ID\tNAME\tPID\tSTATUS\tCOMMAND\tIP\tNetwork\tCREATED\n")
 	// 打印每个容器信息
 	for _, item := range containers {
 		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
