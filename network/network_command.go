@@ -67,7 +67,9 @@ func Disconnect(networkName string, cinfo *container.ContainerInfo) error {
 	if networkName == "" {
 		return nil
 	}
-	Init()
+	if len(networks) == 0 {
+		Init()
+	}
 	nw, ok := networks[networkName]
 	if !ok {
 		return fmt.Errorf("No Such Network: %s", networkName)
