@@ -224,7 +224,7 @@ func configPortMapping(ep *Endpoint) error {
 		// 执行 iptables 命令，添加端口映射转发规则
 		output, err := cmd.Output()
 		if err != nil {
-			log.Errorf("iptables Output, %v", output)
+			log.Errorf("iptables Output, %v, err: %V", output, err)
 			continue
 		}
 
@@ -233,8 +233,11 @@ func configPortMapping(ep *Endpoint) error {
 		iptablesCmd = fmt.Sprintf("-t nat -A OUTPUT -p tcp -m tcp --dport %s -j DNAT --to-destination %s:%s",
 			portMapping[0], ep.IPAddress.String(), portMapping[1])
 		output, err = cmd.Output()
+		cmd = exec.Command("iptables", strings.Split(iptablesCmd, " ")...)
+
+		output, err = cmd.Output()
 		if err != nil {
-			log.Errorf("iptables Output, %v", output)
+			log.Errorf("iptables Output, %v, err: %V", output, err)
 			continue
 		}
 	}
