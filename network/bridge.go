@@ -156,7 +156,7 @@ func (d *BridgeNetworkDriver) Delete(network Network) error {
 }
 
 func (d *BridgeNetworkDriver) Disconnect(network Network, endpoint *Endpoint) error {
-	vethName := fmt.Sprintf("veth-%s", endpoint.ID[:5])
+	vethName := fmt.Sprintf("vethp-%s", endpoint.ID[:5])
 	link, err := netlink.LinkByName(vethName)
 	if err != nil {
 		log.Errorf("BridgeNetworkDriver Disconnect LinkByName error: %v", err)
