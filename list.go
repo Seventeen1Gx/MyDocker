@@ -38,12 +38,14 @@ func ListContainers() {
 	fmt.Fprintf(w, "ID\tNAME\tPID\tSTATUS\tCOMMAND\tCREATED\n")
 	// 打印每个容器信息
 	for _, item := range containers {
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\n",
+		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
 			item.ID,
 			item.Name,
 			item.PID,
 			item.Status,
 			item.Command,
+			item.IP,
+			item.NetworkName,
 			item.CreatedTime)
 	}
 	// 刷新缓冲区，输出表格
