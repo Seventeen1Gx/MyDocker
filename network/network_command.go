@@ -82,6 +82,7 @@ func Disconnect(networkName string, cinfo *container.ContainerInfo) error {
 	if err := ipAllocator.Release(nw.IpRange, ep.IPAddress); err != nil {
 		return fmt.Errorf("Release Ip Addr Fail: %v", err)
 	}
+	log.Infof("ip release: %s,%s", nw.IpRange.String(), ep.IPAddress)
 
 	if err := drivers[nw.Driver].Disconnect(*nw, ep); err != nil {
 		return fmt.Errorf("Disconnect Fail: %s", err)
@@ -216,28 +217,27 @@ func configPortMapping(ep *Endpoint) error {
 			continue
 		}
 
-		// 将宿主机的端口请求转发到容器的地址和端口上
-		iptablesCmd := fmt.Sprintf("-t nat -A PREROUTING -p tcp -m tcp --dport %s -j DNAT --to-destination %s:%s",
-			portMapping[0], ep.IPAddress.String(), portMapping[1])
-		cmd := exec.Command("iptables", strings.Split(iptablesCmd, " ")...)
-
-		// 执行 iptables 命令，添加端口映射转发规则
-		output, err := cmd.Output()
+		// 1. 配置 PREROUTING 链：外部访问宿主机端口转发到容器
+		prerouteCmd := fmt.Sprintf(
+			"-t nat -A PREROUTING -p tcp --dport %s -j DNAT --to-destination %s:%s",
+			portMapping[0], ep.IPAddress.String(), portMapping[1],
+		)
+		cmd := exec.Command("iptables", strings.Split(prerouteCmd, " ")...)
+		output, err := cmd.CombinedOutput()
 		if err != nil {
-			log.Errorf("iptables Output, %v, err: %V", output, err)
+			log.Errorf("add PREROUTING rule failed: %v, output: %s", err, string(output))
 			continue
 		}
 
-		// PREROUTING 针对宿主机外部访问容器的流量
-		// OUTPUT 针对宿主机本地访问容器的流量
-		iptablesCmd = fmt.Sprintf("-t nat -A OUTPUT -p tcp -m tcp --dport %s -j DNAT --to-destination %s:%s",
-			portMapping[0], ep.IPAddress.String(), portMapping[1])
-		output, err = cmd.Output()
-		cmd = exec.Command("iptables", strings.Split(iptablesCmd, " ")...)
-
-		output, err = cmd.Output()
+		// 2. 配置 OUTPUT 链：宿主机本地访问宿主机端口转发到容器
+		outputCmd := fmt.Sprintf(
+			"-t nat -A OUTPUT -p tcp --dport %s -j DNAT --to-destination %s:%s",
+			portMapping[0], ep.IPAddress.String(), portMapping[1],
+		)
+		cmd = exec.Command("iptables", strings.Split(outputCmd, " ")...)
+		output, err = cmd.CombinedOutput()
 		if err != nil {
-			log.Errorf("iptables Output, %v, err: %V", output, err)
+			log.Errorf("add OUTPUT rule failed: %v, output: %s", err, string(output))
 			continue
 		}
 	}
@@ -252,22 +252,31 @@ func cleanPortMapping(ep *Endpoint) error {
 			continue
 		}
 
-		// 注意：这里是 -D DELETE，不是 -A ADD
-		iptablesCmd := fmt.Sprintf(
-			"-t nat -D PREROUTING -p tcp -m tcp --dport %s -j DNAT --to-destination %s:%s",
+		// 删除 PREROUTING 规则
+		prerouteCmd := fmt.Sprintf(
+			"-t nat -D PREROUTING -p tcp --dport %s -j DNAT --to-destination %s:%s",
 			portMapping[0], ep.IPAddress.String(), portMapping[1],
 		)
+		cmd := exec.Command("iptables", strings.Split(prerouteCmd, " ")...)
+		output, err := cmd.CombinedOutput()
+		if err != nil {
+			log.Warnf("delete PREROUTING rule failed (may not exist): %v, output: %s", err, string(output))
+		} else {
+			log.Infof("deleted PREROUTING rule for port %s -> %s:%s", portMapping[0], ep.IPAddress.String(), portMapping[1])
+		}
 
-		cmd := exec.Command("iptables", strings.Split(iptablesCmd, " ")...)
-		_ = cmd.Run() // 忽略错误，不存在也没关系
-
-		iptablesCmd = fmt.Sprintf(
-			"-t nat -D OUTPUT -p tcp -m tcp --dport %s -j DNAT --to-destination %s:%s",
+		// 删除 OUTPUT 规则
+		outputCmd := fmt.Sprintf(
+			"-t nat -D OUTPUT -p tcp --dport %s -j DNAT --to-destination %s:%s",
 			portMapping[0], ep.IPAddress.String(), portMapping[1],
 		)
-
-		cmd = exec.Command("iptables", strings.Split(iptablesCmd, " ")...)
-		_ = cmd.Run() // 忽略错误，不存在也没关系
+		cmd = exec.Command("iptables", strings.Split(outputCmd, " ")...)
+		output, err = cmd.CombinedOutput()
+		if err != nil {
+			log.Warnf("delete OUTPUT rule failed (may not exist): %v, output: %s", err, string(output))
+		} else {
+			log.Infof("deleted OUTPUT rule for port %s -> %s:%s", portMapping[0], ep.IPAddress.String(), portMapping[1])
+		}
 	}
 	return nil
 }
