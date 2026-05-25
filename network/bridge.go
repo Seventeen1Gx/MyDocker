@@ -76,7 +76,7 @@ func (d *BridgeNetworkDriver) Create(subnet string, name string) (*Network, erro
 	// 设置 MASQUERADE/SNAT 规则
 	// iptables -t nat -A POSTROUTING -s <ips> ! -o <bridgeName> -j MASQUERADE
 	iptablesCmd := fmt.Sprintf("-t nat -A POSTROUTING -s %s ! -o %s -j MASQUERADE",
-		subnet, devName)
+		ipNet.String(), devName)
 	cmd := exec.Command("iptables", strings.Split(iptablesCmd, " ")...)
 
 	// 执行 iptables 命令配置规则
